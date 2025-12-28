@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minesweeper 16x16</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont;
+    background: #f2f2f7;
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 2px;
+    width: 95vw;
+    max-width: 420px;
+  }
+  .cell {
+    background: #c7c7cc;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 18px;
+    border-radius: 4px;
+    user-select: none;
+  }
+  .cell.open {
+    background: #e5e5ea;
+  }
+  .cell.mine {
+    background: #ff3b30;
+    color: white;
+  }
+  .cell.flag {
+    background: #ffd60a;
+  }
+</style>
+</head>
+<body>
+
+<div id="board"></div>
+
+<script>
+const size = 16;
+const board = [];
+const boardDiv = document.getElementById("board");
+
+function createBoard() {
+  for (let r = 0; r < size; r++) {
+    board[r] = [];
+    for (let c = 0; c < size; c++) {
+      board[r][c] = { mine: false, open: false, flag: false, count: 0 };
+    }
+  }
+
+  // M şeklinde mayın yerleşimi (orta bölge)
+  const M = [
+    [5,5],[6,5],[7,5],[8,5],[9,5],[10,5],
+    [5,6],[6,6],[7,6],
+    [8,7],
+    [9,6],[10,6],
+    [11,5],[12,5],[13,5],[14,5],[15,5],
+    [7,7],[9,7]
+  ];
+
+  M.forEach(([r,c]) => {
+    if (r < size && c < size) board[r][c].mine = true;
+  });
+
+  // Sayıları hesapla
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (board[r][c].mine) continue;
+      let count = 0;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < size && nc >= 0 && nc < size && board[nr][nc].mine) {
+            count++;
+          }
+        }
+      }
+      board[r][c].count = count;
+    }
+  }
+}
+
+function drawBoard() {
+  boardDiv.innerHTML = "";
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      
+      let pressTimer;
+
+      cell.ontouchstart = () => {
+        pressTimer = setTimeout(() => toggleFlag(r,c,cell), 500);
+      };
+      cell.ontouchend = () => {
+        clearTimeout(pressTimer);
+      };
+
+      cell.onclick = () => openCell(r,c,cell);
+
+      boardDiv.appendChild(cell);
+    }
+  }
+}
+
+function openCell(r,c,el) {
+  const cell = board[r][c];
+  if (cell.open || cell.flag) return;
+  cell.open = true;
+  el.classList.add("open");
+
+  if (cell.mine) {
+    el.classList.add("mine");
+    el.textContent = "💣";
+    alert("💥 Game Over");
+    return;
+  }
+
+  if (cell.count > 0) {
+    el.textContent = cell.count;
+  }
+}
+
+function toggleFlag(r,c,el) {
+  const cell = board[r][c];
+  if (cell.open) return;
+  cell.flag = !cell.flag;
+  el.classList.toggle("flag");
+  el.textContent = cell.flag ? "🚩" : "";
+}
+
+createBoard();
+drawBoard();
+</script>
+
+</body>
+</html>
